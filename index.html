@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lane Detection and Driving Assistance System</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        
+        header {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 1.5rem 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.2rem;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-weight: 300;
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background: #3498db;
+            color: white;
+            padding: 1rem;
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .video-container {
+            position: relative;
+            overflow: hidden;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        }
+        
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #eee;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .info-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        
+        .info-box {
+            flex: 1;
+            min-width: 250px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 5px solid #3498db;
+        }
+        
+        .info-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        
+        .info-value {
+            font-size: 1.2rem;
+            margin: 0;
+        }
+        
+        .info-status {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .status-safe {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .status-unsafe {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .status-neutral {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .upload-section {
+            text-align: center;
+            padding: 2rem;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        
+        .upload-section:hover {
+            border-color: #3498db;
+        }
+        
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .info-box {
+                min-width: 100%;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Lane Detection & Driving Assistance</h1>
+        <div class="subtitle">AI-Powered Vehicle Positioning and Safety Analysis</div>
+    </header>
+    
+    <div class="container">
+        <div class="card">
+            <div class="card-header">Live Demo</div>
+            <div class="card-body">
+                <div class="video-container">
+                    <video id="demo-video" controls>
+                        <source src="/api/placeholder/400/320" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div class="controls">
+                    <button class="btn" id="start-btn">Start Analysis</button>
+                    <button class="btn" id="upload-btn">Upload Your Video</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-container">
+            <div class="info-box">
+                <div class="info-title">Current Lane</div>
+                <p class="info-value" id="current-lane">Center</p>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-title">Lane Change Safety</div>
+                <p class="info-value">
+                    <span class="info-status status-safe" id="lane-safety">Safe to change lanes</span>
+                </p>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-title">Nearest Vehicle</div>
+                <p class="info-value" id="nearest-vehicle">23.5m (Front)</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">Upload Your Dashboard Video</div>
+            <div class="card-body">
+                <div class="upload-section">
+                    <h3>Drag & Drop Your Video Here</h3>
+                    <p>or</p>
+                    <input type="file" id="file-input" accept="video/mp4,video/webm,video/ogg" style="display: none;">
+                    <button class="btn" onclick="document.getElementById('file-input').click()">Select File</button>
+                    <p>Maximum file size: 100MB</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">How It Works</div>
+            <div class="card-body">
+                <h3>AI-Powered Lane and Vehicle Detection</h3>
+                <p>Our system uses computer vision and deep learning to analyze dashboard footage in real-time:</p>
+                
+                <ol>
+                    <li><strong>Lane Detection:</strong> Computer vision algorithms identify lane markings and determine the vehicle's current position.</li>
+                    <li><strong>Vehicle Detection:</strong> Machine learning models detect and track surrounding vehicles.</li>
+                    <li><strong>Distance Calculation:</strong> The system estimates the distance to nearby vehicles using perspective and depth analysis.</li>
+                    <li><strong>Safety Analysis:</strong> Real-time assessment of lane change safety based on surrounding traffic.</li>
+                </ol>
+                
+                <h3>Key Features</h3>
+                <ul>
+                    <li>Real-time lane positioning feedback</li>
+                    <li>Vehicle proximity warnings</li>
+                    <li>Lane change safety recommendations</li>
+                    <li>Works with standard dashboard camera footage</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Lane Detection and Driving Assistance System &copy; 2025</p>
+    </footer>
+    
+    <script>
+        // Global variables
+        let currentJobId = null;
+        let statusCheckInterval = null;
+        
+        // DOM elements
+        const demoVideo = document.getElementById('demo-video');
+        const startBtn = document.getElementById('start-btn');
+        const uploadBtn = document.getElementById('upload-btn');
+        const fileInput = document.getElementById('file-input');
+        const currentLaneElement = document.getElementById('current-lane');
+        const laneSafetyElement = document.getElementById('lane-safety');
+        const nearestVehicleElement = document.getElementById('nearest-vehicle');
+        
+        // Initialize video source
+        demoVideo.src = '/demo-video';
+        demoVideo.onerror = function() {
+            // Use a data URI instead of external placeholder service
+            demoVideo.poster = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360"><rect width="640" height="360" fill="#eeeeee"/><text x="50%" y="50%" font-family="sans-serif" font-size="24" text-anchor="middle" dominant-baseline="middle" fill="#333333">Upload a video to begin</text></svg>');
+        };
+        
+        // Event listeners
+        startBtn.addEventListener('click', function() {
+            if (demoVideo.paused) {
+                demoVideo.play();
+                this.textContent = 'Pause Analysis';
+                
+                // If we have a processed video, start polling for updates
+                if (currentJobId) {
+                    startStatusChecking(currentJobId);
+                }
+            } else {
+                demoVideo.pause();
+                this.textContent = 'Start Analysis';
+                
+                // Stop polling for updates
+                if (statusCheckInterval) {
+                    clearInterval(statusCheckInterval);
+                }
+            }
+        });
+        
+        uploadBtn.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                uploadVideo(file);
+            }
+        });
+        
+        // Handle drag and drop
+        const uploadSection = document.querySelector('.upload-section');
+        
+        uploadSection.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#3498db';
+            this.style.backgroundColor = 'rgba(52, 152, 219, 0.1)';
+        });
+        
+        uploadSection.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#ddd';
+            this.style.backgroundColor = '';
+        });
+        
+        uploadSection.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#ddd';
+            this.style.backgroundColor = '';
+            
+            if (e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                uploadVideo(file);
+            }
+        });
+        
+        // Functions
+        function uploadVideo(file) {
+            // Check file type
+            if (!file.type.startsWith('video/')) {
+                alert('Please upload a video file');
+                return;
+            }
+            
+            // Check file size (100MB limit)
+            if (file.size > 100 * 1024 * 1024) {
+                alert('File size exceeds 100MB limit');
+                return;
+            }
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('video', file);
+            
+            // Show loading state
+            startBtn.disabled = true;
+            uploadBtn.disabled = true;
+            
+            // Update UI to show processing
+            currentLaneElement.textContent = 'Processing...';
+            laneSafetyElement.textContent = 'Analyzing...';
+            laneSafetyElement.className = 'info-status status-neutral';
+            nearestVehicleElement.textContent = 'Calculating...';
+            
+            // Send the file to the server
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.job_id) {
+                    currentJobId = data.job_id;
+                    startStatusChecking(data.job_id);
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+                
+                startBtn.disabled = false;
+                uploadBtn.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Upload failed. Please try again.');
+                
+                startBtn.disabled = false;
+                uploadBtn.disabled = false;
+            });
+        }
+        
+        function startStatusChecking(jobId) {
+            // Clear any existing interval
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+            
+            // Check status immediately
+            checkJobStatus(jobId);
+            
+            // Then check every 2 seconds
+            statusCheckInterval = setInterval(() => {
+                checkJobStatus(jobId);
+            }, 2000);
+        }
+        
+        function checkJobStatus(jobId) {
+            fetch(`/job/${jobId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update UI with job status
+                    if (data.status === 'complete') {
+                        // Video is ready, update the video source
+                        demoVideo.src = `/video/${jobId}`;
+                        demoVideo.load();
+                        
+                        // If the start button shows "Pause", start playing the video
+                        if (startBtn.textContent === 'Pause Analysis') {
+                            demoVideo.play();
+                        }
+                        
+                        // Update UI with final data
+                        updateUIWithJobData(data.data);
+                        
+                        // Stop checking status
+                        clearInterval(statusCheckInterval);
+                    } 
+                    else if (data.status === 'error') {
+                        alert('Error processing video: ' + (data.error || 'Unknown error'));
+                        clearInterval(statusCheckInterval);
+                    }
+                    else {
+                        // Update UI with current data
+                        updateUIWithJobData(data.data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking job status:', error);
+                });
+        }
+        
+        function updateUIWithJobData(data) {
+            // Update current lane
+            currentLaneElement.textContent = data.current_lane || 'Unknown';
+            
+            // Update lane change safety
+            if (data.lane_change_safe) {
+                laneSafetyElement.textContent = 'Safe to change lanes';
+                laneSafetyElement.className = 'info-status status-safe';
+            } else {
+                laneSafetyElement.textContent = 'Not safe to change lanes';
+                laneSafetyElement.className = 'info-status status-unsafe';
+            }
+            
+            // Update nearest vehicle (this would come from the backend in a real implementation)
+            // For now, we'll use a placeholder
+            nearestVehicleElement.textContent = data.nearest_vehicle || 'Unknown';
+        }
+    </script>
+</body>
+</html>
